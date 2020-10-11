@@ -1,4 +1,6 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# React Custom Hook - useForm
+
+В проекте создан кастомный хук дял работы с формами, приведены несколько примеров работы с хуком. Код написать чисто для статьи, представляет из себя очевидный подход для работы с формами. Поля хранятся в одном объекте, они максимально гибкие, в плане добавления новых свойств.
 
 ## Available Scripts
 
