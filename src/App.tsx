@@ -1,27 +1,64 @@
 import React from 'react';
-import './App.css';
-import { useForm } from './Hooks/useForm';
+import { useForm, ICustomField } from './Hooks/useForm';
+
+type IDateInput = { type: string };
+type ILabel = { label: string };
+interface Form {
+  firstName: ICustomField<IDateInput & ILabel>;
+  lastName: ICustomField<IDateInput & ILabel>;
+  datetime: ICustomField<IDateInput & ILabel>;
+}
 
 const formInputs = {
   firstName: {
-    isValid: true,
+    required: true,
+    validators: [
+      (s: string) => !s.length && 'Поле обязательно для заполнения',
+      (s: string) => s.length < 2 && 'Минимальная длина строки 2',
+      (s: string) => s.length <= 2 && 'А теперь 3',
+      (s: string) => parseInt(s) < 2 && 'Должна быть цифра, больше 1',
+    ],
+    label: 'First Name',
   },
-  lastName: '',
+  datetime: {
+    type: 'date',
+    label: 'Birth Date',
+    validators: [
+      (s: string) => new Date(s).getUTCFullYear() > new Date().getUTCFullYear() && 'Год рождения не может быть больше текущего',
+    ],
+  },
+  lastName: {
+    label: 'Last Name',
+  },
 }
 
-function App() {
-  const { inputs, handleSubmit } = useForm(formInputs);
+const App = () => {
+  const { inputs, isValid, handleSubmit } = useForm(formInputs);
+  const { firstName, datetime, lastName }: Form = inputs;
 
-  const { firstName }: any = inputs;
-
-  const onSubmit = ({ values, isValid, fields }: any) => {
-    console.log(values, isValid, fields, 'submit');
+  const onSubmit = ({ values }: any) => {
+    console.log(values, 'submit');
   }
+
+  const fields = [firstName, lastName, datetime];
 
   return (
     <div className="App">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <input type="text" value={firstName.value} onChange={firstName.setState}/>
+        {fields.map((field, index) => (
+          <div key={index}>
+            <input
+              type={field.type || 'text'}
+              placeholder={field.label}
+              value={field.value}
+              onChange={field.setState}
+            />
+            <span>{field.touched && field.error}</span>
+          </div>
+        ))}
+        <div>
+          <button disabled={!isValid}>Send form</button>
+        </div>
       </form>
     </div>
   );
