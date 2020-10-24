@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useCallback, useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 
 type IValidatorFN = (s: string) => {};
 
@@ -37,10 +37,8 @@ export const useForm = (fields = {}) => {
   const [inputs, setState]: any = useState(form);
   const [isValid, setFormValid]: any = useState(true);
 
-  const getFormValidationState = useCallback(
-    (inputs) => Object.entries(inputs).reduce((isValid: any, [_, value]: any) => Boolean(isValid * value.isValid), true),
-    [],
-  );
+  const getFormValidationState = (inputs: IField[]) =>
+    Object.entries(inputs).reduce((isValid: any, [_, value]: any) => Boolean(isValid * value.isValid), true);
 
   const fieldValidation = (field: IField, options: any = {}) => {
     const { value, required, validators } = field;
@@ -70,27 +68,26 @@ export const useForm = (fields = {}) => {
     return { ...field, isValid, error, ...options };
   };
 
-  const handleInput = useCallback(
-    (element: ChangeEvent<HTMLInputElement>, name: string) => {
-      const input = inputs[name];
-      const value = element.target.value;
+  const handleInput = (element: ChangeEvent<HTMLInputElement>, name: string) => {
+    const input = inputs[name];
+    const value = element.target.value;
 
-      const field = {
-        ...input,
-        value,
-        touched: true,
-        isValid: true,
-      };
+    const field = {
+      ...input,
+      value,
+      touched: true,
+      isValid: true,
+    };
 
-      const validatedField = fieldValidation(field);
+    const validatedField = fieldValidation(field);
 
-      setState((prevState: any) => {
-        const items = {...prevState, ...{[name]: validatedField}};
+    setState((prevState: any) => {
+      const items = {...prevState, [name]: validatedField};
 
-        setFormValid(getFormValidationState(items));
-        return items;
-      });
-    }, [inputs, setState, setFormValid, getFormValidationState]);
+      setFormValid(getFormValidationState(items));
+      return items;
+    });
+  }
 
   const handleSubmit = (onSubmit: Function) => (e: FormEvent) => {
     if (e && e.preventDefault) {
