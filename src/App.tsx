@@ -1,13 +1,5 @@
 import React from 'react';
-import { useForm, ICustomField } from './Hooks/useForm';
-
-type IDateInput = { type: string };
-type ILabel = { label: string };
-interface Form {
-  firstName: ICustomField<IDateInput & ILabel>;
-  lastName: ICustomField<IDateInput & ILabel>;
-  datetime: ICustomField<IDateInput & ILabel>;
-}
+import { useForm, IValues } from './hooks/useForm';
 
 const formInputs = {
   firstName: {
@@ -33,22 +25,22 @@ const formInputs = {
 }
 
 const App = () => {
-  const { inputs, isValid, handleSubmit } = useForm(formInputs);
-  const { firstName, datetime, lastName }: Form = inputs;
+  const { fields, isValid, handleSubmit } = useForm(formInputs);
+  const { firstName, datetime, lastName } = fields;
 
-  const onSubmit = ({ values }: any) => {
+  const onSubmit = ({ values }: { values: IValues }) => {
     console.log(values, 'submit');
   }
 
-  const fields = [firstName, lastName, datetime];
+  const formFields = [firstName, lastName, datetime];
 
   return (
     <div className="App">
       <form onSubmit={handleSubmit(onSubmit)}>
-        {fields.map((field, index) => (
+        {formFields.map((field, index) => (
           <div key={index}>
             <input
-              type={field.type || 'text'}
+              type={field.type}
               placeholder={field.label}
               value={field.value}
               onChange={field.setState}

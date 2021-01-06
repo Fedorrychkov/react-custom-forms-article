@@ -3,23 +3,44 @@ import { ChangeEvent, FormEvent, useState } from 'react';
 type IValidatorFN = (s: string) => {};
 
 export interface IField {
-  value: any;
-  error: string;
-  isValid: boolean;
-  required: boolean;
-  touched: boolean;
-  setState: (event: ChangeEvent<HTMLInputElement>) => {};
-  validators: IValidatorFN[];
+  value?: string;
+  type?: string;
+  label?: string;
+  error?: string;
+  isValid?: boolean;
+  required?: boolean;
+  touched?: boolean;
+  setState?: (event: ChangeEvent<HTMLInputElement>) => {};
+  validators?: IValidatorFN[];
 }
 
 export type ICustomField<T = {}> = IField & T;
 
-export const useForm = (fields = {}) => {
-  const form = Object.entries(fields).reduce((inputs, [name, value]: any[]) => {
+export type ICustomObject<T = {}> = {
+  [key: string]: ICustomField & T;
+}
+
+export type IValues = {
+  [key: string]: string | number;
+}
+
+export type IForm = {
+  fields: ICustomObject;
+  isValid: boolean;
+  handleSubmit: (onSubmit: Function) => (e: FormEvent) => void;
+}
+
+type IOptions = {
+  [key: string]: any;
+}
+
+export const useForm = (initialFields: ICustomObject): IForm => {
+  const form = Object.entries(initialFields).reduce((fields, [name, value]: any[]) => {
     const isString = typeof value === 'string';
 
     const field = {
       [name]: {
+        type: 'text',
         value: (isString && value) || ((!isString && value.value) || ''),
         error: (!isString && value.error) || null,
         validators: (!isString && value.validators) || null,
@@ -31,16 +52,16 @@ export const useForm = (fields = {}) => {
       },
     };
 
-    return {...inputs, ...field};
+    return {...fields, ...field};
   }, {});
 
-  const [inputs, setState]: any = useState(form);
-  const [isValid, setFormValid]: any = useState(true);
+  const [fields, setState] = useState<ICustomObject>(form);
+  const [isValid, setFormValid] = useState<boolean>(true);
 
-  const getFormValidationState = (inputs: IField[]) =>
-    Object.entries(inputs).reduce((isValid: any, [_, value]: any) => Boolean(isValid * value.isValid), true);
+  const getFormValidationState = (fields: ICustomObject): boolean =>
+    Object.entries(fields).reduce((isValid: boolean, [_, value]: any) => Boolean(Number(isValid) * Number(value.isValid)), true);
 
-  const fieldValidation = (field: IField, options: any = {}) => {
+  const fieldValidation = (field: ICustomField, options: IOptions = {}) => {
     const { value, required, validators } = field;
 
     let isValid = true, error;
@@ -54,7 +75,7 @@ export const useForm = (fields = {}) => {
       const results = validators.map(validateFn => {
         if (typeof validateFn === 'string') return validateFn;
     
-        const validationResult = validateFn(value);
+        const validationResult = validateFn(value || '');
     
         return typeof validationResult === 'string' ? validationResult : '';
       }).filter(message => message !== '');
@@ -69,7 +90,7 @@ export const useForm = (fields = {}) => {
   };
 
   const handleInput = (element: ChangeEvent<HTMLInputElement>, name: string) => {
-    const input = inputs[name];
+    const input = fields[name];
     const value = element.target.value;
 
     const field = {
@@ -81,7 +102,7 @@ export const useForm = (fields = {}) => {
 
     const validatedField = fieldValidation(field);
 
-    setState((prevState: any) => {
+    setState((prevState: ICustomObject) => {
       const items = {...prevState, [name]: validatedField};
 
       setFormValid(getFormValidationState(items));
@@ -94,9 +115,9 @@ export const useForm = (fields = {}) => {
       e.preventDefault();
     }
 
-    const fieldsArray = Object.entries(inputs);
-    const values = fieldsArray.reduce(((fields: any, [name, {value}]: any) => ({ ...fields, [name]: value })), {});
-    const validatedInputs = fieldsArray.reduce((fields: any, [name, value]: any) => ({ ...fields, [name]: fieldValidation(value, { touched: true }) }), {});
+    const fieldsArray = Object.entries(fields);
+    const values = fieldsArray.reduce(((prev: ICustomObject, [name, { value }]: any) => ({ ...prev, [name]: value })), {});
+    const validatedInputs = fieldsArray.reduce((prev: ICustomObject, [name, value]: any) => ({ ...prev, [name]: fieldValidation(value, { touched: true }) }), {});
 
     setFormValid(getFormValidationState(validatedInputs));
     setState(validatedInputs);
@@ -105,8 +126,8 @@ export const useForm = (fields = {}) => {
   }
 
   return {
-    handleSubmit,
-    inputs,
+    fields,
     isValid,
+    handleSubmit,
   }
 }
